@@ -1,0 +1,126 @@
+---
+title: "Telecom_churn"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+
+library("ISLR")
+library('pROC')
+churn_data<-read.csv("Churn_Train.csv")
+churn_data1<-read.csv("Churn_Train1.csv")
+levels(churn_data$churn)
+```
+
+```{r}
+summary(churn_data)
+```
+
+
+```{r}
+summary(churn_data1)
+
+```
+Cleaning the Data
+
+```{r}
+row.has.na <- apply(churn_data[ , 6:19], 1, function(x){any(is.na(x))})
+sum(row.has.na)
+cleaning <- churn_data[!row.has.na,]
+
+```
+
+```{r}
+row.has.na.1 <- apply(churn_data1[ , 6:19], 1, function(x){any(is.na(x))})
+sum(row.has.na)
+cleaning1 <- churn_data1[!row.has.na.1,]
+```
+
+
+```{r}
+cleaning$account_length<-abs(cleaning$account_length)
+cleaning$number_vmail_messages<-abs(cleaning$number_vmail_messages)
+
+```
+
+
+
+```{r}
+cleaning1$account_length<-abs(cleaning1$account_length)
+cleaning1$number_vmail_messages<-abs(cleaning1$number_vmail_messages)
+
+```
+
+_ replacing NA in account lenght with mean_
+```{r}
+cleaning_mean<-mean(cleaning$account_length,na.rm = TRUE)
+cleaning$account_length[is.na(cleaning$account_length)] = cleaning_mean
+```
+
+```{r}
+cleaning_mean1<-mean(cleaning1$account_length,na.rm = TRUE)
+cleaning1$account_length[is.na(cleaning1$account_length)] = cleaning_mean1
+```
+
+
+```{r}
+summary(cleaning)
+```
+
+```{r}
+head(cleaning1)
+```
+
+
+```{r}
+summary(cleaning1)
+
+```
+```{r}
+churn_data<- cleaning
+churn_data_predicted<- cleaning1
+levels(churn_data$churn)
+```
+
+```{r}
+Model = glm(churn ~ account_length	+ area_code +	international_plan +	voice_mail_plan +	number_vmail_messages +	total_day_minutes +	total_day_calls +	total_day_charge +	total_eve_minutes +	total_eve_calls +	total_eve_charge +	total_night_minutes +	total_night_calls +	total_night_charge	+ total_intl_minutes +	total_intl_calls	+ total_intl_charge +	number_customer_service_calls, family = "binomial", data = churn_data)
+summary(Model)
+```
+
+```{r}
+Model1 = glm(churn ~ international_plan +	voice_mail_plan +	total_day_charge +	total_intl_calls + number_customer_service_calls, family = "binomial", data = churn_data)
+summary(Model1)
+```
+
+```{r}
+#use churn_data2 in new data
+Predicted_values<-predict(Model1, newdata = churn_data_predicted, type = 'response')
+head(churn_data$churn)
+head(Predicted_values)
+
+```
+
+
+```{r}
+plot(roc(as.numeric(churn_data_predicted$churn),as.numeric(Predicted_values)))
+```
+
+
+```{r}
+roc(as.numeric(churn_data_predicted$churn),as.numeric(Predicted_values))
+```
+
+```{r}
+Predicted_values = as.factor(Predicted_values > 0.15) #p>0.15 means yes
+head(Predicted_values)
+```
+
+```{r}
+levels(Predicted_values) <- list(no = 'FALSE', yes = 'TRUE')
+table(Predicted = Predicted_values, True = churn_data_predicted$churn)
+```
+
+
+
